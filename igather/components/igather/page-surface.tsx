@@ -5,10 +5,10 @@ import type { ReactNode } from "react";
 const PRIMARY = "#568DED";
 
 export const primaryButtonClass =
-  "flex w-full items-center justify-center rounded-2xl py-3.5 text-sm font-semibold text-white transition hover:opacity-90 active:scale-[0.99]";
+  "flex w-full items-center justify-center rounded-2xl py-3.5 text-sm font-semibold text-white shadow-[0_4px_14px_rgba(86,141,237,0.35)] transition hover:brightness-[1.03] hover:shadow-[0_6px_18px_rgba(86,141,237,0.42)] active:scale-[0.99] active:brightness-[0.98]";
 
 export const secondaryButtonClass =
-  "flex w-full items-center justify-center rounded-2xl border border-neutral-400 bg-white py-3.5 text-sm font-semibold text-neutral-900 transition hover:bg-neutral-50 active:scale-[0.99]";
+  "flex w-full items-center justify-center rounded-2xl border border-neutral-200/95 bg-white py-3.5 text-sm font-semibold text-neutral-900 shadow-[0_1px_2px_rgba(0,0,0,0.04)] transition hover:border-neutral-300 hover:bg-neutral-50/90 active:scale-[0.99]";
 
 export function PrimaryButton({
   href,
@@ -59,11 +59,11 @@ export function PageHeaderWithBack({
   children?: ReactNode;
 }) {
   return (
-    <header className="shrink-0 rounded-b-[24px] bg-[#F2F2F2] px-4 pb-5 pt-10">
+    <header className="shrink-0 rounded-b-[24px] bg-[#F2F2F2] px-4 pb-5 pt-10 shadow-[inset_0_-1px_0_rgba(0,0,0,0.05)]">
       <div className="flex items-start gap-2">
         <Link
           href={backHref}
-          className="mt-0.5 flex size-10 shrink-0 items-center justify-center rounded-full text-neutral-900"
+          className="mt-0.5 flex size-10 shrink-0 items-center justify-center rounded-full text-neutral-900 transition hover:bg-black/[0.06] active:bg-black/[0.1]"
           aria-label="Back"
         >
           <ArrowLeft className="size-6" strokeWidth={2} />
@@ -115,7 +115,7 @@ export function BorderedCard({
 }) {
   return (
     <div
-      className={`rounded-2xl border border-black bg-white p-4 ${className}`}
+      className={`rounded-2xl border border-neutral-200/90 bg-white p-4 shadow-[0_1px_2px_rgba(0,0,0,0.04),0_4px_14px_rgba(0,0,0,0.04)] ${className}`}
     >
       {children}
     </div>

@@ -24,6 +24,22 @@ body {
   color: var(--foreground);
 }
 
+/* Scroll areas — thin native-style scrollbar */
+.igather-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 0, 0, 0.14) transparent;
+}
+.igather-scroll::-webkit-scrollbar {
+  width: 5px;
+}
+.igather-scroll::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.12);
+  border-radius: 9999px;
+}
+.igather-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
 /* Group settings: timer range — grey track, black progress, white thumb */
 .gather-timer-range {
   -webkit-appearance: none;

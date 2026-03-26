@@ -66,17 +66,17 @@ export function ProfilePage() {
 
   return (
     <PhoneShell>
-      <div className="relative flex min-h-0 flex-1 flex-col bg-white">
-        <header className="shrink-0 px-4 pb-2 pt-10">
+      <div className="relative flex min-h-0 flex-1 flex-col bg-[#FAFAFA]">
+        <header className="shrink-0 rounded-b-[24px] bg-[#F2F2F2] px-4 pb-4 pt-10 shadow-[inset_0_-1px_0_rgba(0,0,0,0.05)]">
           <h1 className="text-center text-lg font-bold text-neutral-900">
             Profile
           </h1>
         </header>
 
-        <div className="min-h-0 flex-1 overflow-y-auto px-5 pb-36">
+        <div className="igather-scroll min-h-0 flex-1 overflow-y-auto px-5 pb-36 pt-4">
           <div className="flex flex-col items-center">
             <div
-              className="flex size-[104px] shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-neutral-200 bg-gradient-to-b from-sky-100 to-indigo-100 text-5xl"
+              className="flex size-[104px] shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-white bg-gradient-to-b from-sky-100 to-indigo-100 text-5xl shadow-[0_4px_20px_rgba(0,0,0,0.08)] ring-1 ring-neutral-200/80"
               aria-hidden
             >
               🪽
@@ -132,7 +132,7 @@ export function ProfilePage() {
                 autoComplete="off"
                 value={travel}
                 onChange={(e) => setTravel(e.target.value)}
-                className="w-full rounded-full border border-black bg-white px-4 py-3.5 text-center text-sm font-medium text-neutral-900 outline-none transition focus:ring-2 focus:ring-[#568DED]/40"
+                className="w-full rounded-full border border-neutral-200 bg-white px-4 py-3.5 text-center text-sm font-medium text-neutral-900 shadow-[0_1px_2px_rgba(0,0,0,0.04)] outline-none transition focus:border-[#568DED]/50 focus:ring-2 focus:ring-[#568DED]/35"
               />
             </div>
           </section>
@@ -141,7 +141,7 @@ export function ProfilePage() {
             <button
               type="button"
               onClick={handleSave}
-              className="w-full rounded-full py-3.5 text-sm font-semibold text-white shadow-sm transition hover:opacity-95 active:scale-[0.99]"
+              className="w-full rounded-full py-3.5 text-sm font-semibold text-white shadow-[0_4px_14px_rgba(255,107,107,0.4)] transition hover:brightness-[1.03] active:scale-[0.99]"
               style={{ backgroundColor: SAVE_CORAL }}
             >
               Save Settings

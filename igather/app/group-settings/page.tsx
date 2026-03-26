@@ -40,11 +40,11 @@ export default function GroupSettingsPage() {
   return (
     <PhoneShell>
       <div className={`flex min-h-0 flex-1 flex-col bg-white ${COMIC}`}>
-        <header className="shrink-0 rounded-b-[24px] bg-[#F2F2F2] px-4 pb-5 pt-10">
+        <header className="shrink-0 rounded-b-[24px] bg-[#F2F2F2] px-4 pb-5 pt-10 shadow-[inset_0_-1px_0_rgba(0,0,0,0.05)]">
           <div className="flex items-center gap-2">
             <Link
               href="/chat"
-              className="flex size-10 shrink-0 items-center justify-center rounded-full text-neutral-900"
+              className="flex size-10 shrink-0 items-center justify-center rounded-full text-neutral-900 transition hover:bg-black/[0.06] active:bg-black/[0.1]"
               aria-label="Back"
             >
               <ArrowLeft className="size-6" strokeWidth={2} />
@@ -64,7 +64,7 @@ export default function GroupSettingsPage() {
           </div>
         </header>
 
-        <div className="min-h-0 flex-1 space-y-6 overflow-y-auto px-4 py-5">
+        <div className="igather-scroll min-h-0 flex-1 space-y-6 overflow-y-auto px-4 py-5">
           <section>
             <h2 className="mb-3 text-sm font-bold text-neutral-900">
               iGather Start Timer
@@ -115,7 +115,7 @@ export default function GroupSettingsPage() {
               {PAST_SUCCESSFUL_HANGOUTS.map((h) => (
                 <div
                   key={h.id}
-                  className="flex items-center gap-3 rounded-2xl border border-black bg-white p-3"
+                  className="flex items-center gap-3 rounded-2xl border border-neutral-200/90 bg-white p-3 shadow-[0_1px_2px_rgba(0,0,0,0.04),0_4px_12px_rgba(0,0,0,0.04)]"
                 >
                   <div className="relative size-14 shrink-0 overflow-hidden rounded-full bg-neutral-200">
                     <Image

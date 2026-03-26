@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { readGroupSettings } from "@/lib/group-settings";
+import { readLockedPlan, type LockedPlanPayload } from "@/lib/locked-plan";
 import { PAST_LOCATIONS } from "@/lib/past-successful-hangouts";
 import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
@@ -10,6 +11,7 @@ import {
   ArrowLeft,
   ChevronDown,
   ChevronUp,
+  LayoutGrid,
   Play,
   Plus,
   Settings,
@@ -136,6 +138,7 @@ function GroupChatInner() {
   const pastCalendarCells = useMemo(() => buildCalendarCells(2026, 2), []);
 
   const [voteSecondsLeft, setVoteSecondsLeft] = useState(60);
+  const [lockedPlan, setLockedPlan] = useState<LockedPlanPayload | null>(null);
 
   const purposeLabel = useMemo(() => {
     if (purpose === "other") return otherText.trim() || "Other";
@@ -183,6 +186,10 @@ function GroupChatInner() {
     return () => window.removeEventListener("keydown", onKey);
   }, [closeOverlay]);
 
+  useEffect(() => {
+    setLockedPlan(readLockedPlan());
+  }, []);
+
   const onStartNewPlan = () => {
     setOverlay("purpose");
   };
@@ -209,11 +216,11 @@ function GroupChatInner() {
   return (
     <div className="relative flex min-h-0 flex-1 flex-col bg-white">
       {/* Header: light gray, rounded bottom (#F2F2F2) */}
-      <header className="relative z-0 shrink-0 rounded-b-[24px] bg-[#F2F2F2] px-4 pb-4 pt-10">
+      <header className="relative z-0 shrink-0 rounded-b-[24px] bg-[#F2F2F2] px-4 pb-4 pt-10 shadow-[inset_0_-1px_0_rgba(0,0,0,0.05)]">
         <div className="flex items-center justify-between gap-2">
           <Link
             href="/"
-            className="flex size-11 items-center justify-center rounded-full text-neutral-900"
+            className="flex size-11 items-center justify-center rounded-full text-neutral-900 transition hover:bg-black/[0.06] active:bg-black/[0.1]"
             aria-label="Back"
           >
             <ArrowLeft className="size-6" strokeWidth={2} />
@@ -229,7 +236,7 @@ function GroupChatInner() {
           <div className="flex items-center gap-1">
             <button
               type="button"
-              className="flex size-11 items-center justify-center rounded-full text-neutral-900"
+              className="flex size-11 items-center justify-center rounded-full text-neutral-900 transition hover:bg-black/[0.06] active:bg-black/[0.1]"
               aria-label="Start planning"
               onClick={() => setOverlay("start")}
             >
@@ -245,6 +252,28 @@ function GroupChatInner() {
           </div>
         </div>
       </header>
+
+      {lockedPlan && (
+        <div className="shrink-0 px-4 pt-3">
+          <div
+            className="rounded-2xl px-4 py-4 text-white shadow-[0_8px_24px_rgba(86,141,237,0.35)] ring-1 ring-white/20"
+            style={{ backgroundColor: PRIMARY }}
+          >
+            <p className="text-center text-sm font-bold leading-snug">
+              ✅ {lockedPlan.name}
+            </p>
+            <p className="mt-2 text-center text-xs font-medium leading-snug">
+              {lockedPlan.location}
+            </p>
+            <p className="mt-1 text-center text-xs font-medium leading-snug">
+              {lockedPlan.time}
+            </p>
+            <p className="mt-1 text-center text-xs font-medium leading-snug">
+              Who: {lockedPlan.who}
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Messages */}
       <div className="flex min-h-0 flex-1 flex-col overflow-hidden px-4 pt-4">
@@ -262,10 +291,10 @@ function GroupChatInner() {
                 <div className="w-8 shrink-0" aria-hidden />
               )}
               <div
-                className={`max-w-[min(100%,18rem)] rounded-[1.5rem] px-4 py-2.5 text-sm leading-snug ${
+                className={`max-w-[min(100%,18rem)] rounded-[1.5rem] px-4 py-2.5 text-sm leading-snug shadow-[0_1px_2px_rgba(0,0,0,0.06)] ${
                   m.role === "out"
-                    ? "bg-black text-white"
-                    : "bg-[#E8E8E8] text-neutral-900"
+                    ? "bg-neutral-900 text-white"
+                    : "bg-[#ECECEC] text-neutral-900 ring-1 ring-black/[0.04]"
                 }`}
               >
                 {m.text}
@@ -279,7 +308,7 @@ function GroupChatInner() {
       {showPlanCard && (
         <div className="shrink-0 px-4 pb-2">
           <div
-            className="rounded-2xl px-4 py-4 text-white"
+            className="rounded-2xl px-4 py-4 text-white shadow-[0_8px_24px_rgba(86,141,237,0.35)] ring-1 ring-white/15"
             style={{ backgroundColor: PRIMARY }}
           >
             <p className="text-center text-sm font-medium leading-snug">
@@ -337,16 +366,16 @@ function GroupChatInner() {
       )}
 
       {/* Composer */}
-      <footer className="shrink-0 rounded-t-[24px] bg-[#F0F0F0] px-4 pb-6 pt-3">
+      <footer className="shrink-0 rounded-t-[24px] border-t border-neutral-200/80 bg-[#F5F5F5] px-4 pb-6 pt-3 shadow-[0_-4px_24px_rgba(0,0,0,0.06)]">
         <div className="flex items-center gap-3">
           <button
             type="button"
-            className="flex size-12 shrink-0 items-center justify-center rounded-full bg-neutral-900 text-white"
+            className="flex size-12 shrink-0 items-center justify-center rounded-full bg-neutral-900 text-white shadow-md transition hover:bg-neutral-800 active:scale-95"
             aria-label="More"
           >
             <Plus className="size-6" strokeWidth={2.5} />
           </button>
-          <div className="h-12 flex-1 rounded-full border border-neutral-200 bg-white" />
+          <div className="h-12 flex-1 rounded-full border border-neutral-200/90 bg-white shadow-inner" />
         </div>
       </footer>
 

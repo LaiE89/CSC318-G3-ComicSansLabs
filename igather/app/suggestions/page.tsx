@@ -39,7 +39,7 @@ const ALL_SUGGESTIONS: Suggestion[] = [
     price: "Price Per Person: $10-$20",
     location: "Location: 185 College St, Toronto, ON",
     image:
-      "https://images.unsplash.com/photo-1559314809-9d75509e091e?w=800&q=80",
+      "https://images.unsplash.com/photo-1525755662778-989d0524087e?w=800&q=80",
   },
   {
     id: "3",
@@ -66,7 +66,7 @@ const ALL_SUGGESTIONS: Suggestion[] = [
     price: "Price Per Person: $25-$40",
     location: "Location: 88 Spadina Ave, Toronto, ON",
     image:
-      "https://images.unsplash.com/photo-1579584425555-4a2a37e6c4b0?w=800&q=80",
+      "https://images.unsplash.com/photo-1553621042-f6e147245754?w=800&q=80",
   },
 ];
 
@@ -92,11 +92,11 @@ export default function SuggestionsPage() {
 
   return (
     <PhoneShell>
-      <div className={`flex min-h-0 flex-1 flex-col bg-white ${COMIC}`}>
+      <div className={`flex min-h-0 flex-1 flex-col bg-[#FAFAFA] ${COMIC}`}>
         <PageHeaderCentered title="Suggestions" backHref="/timeout" />
 
-        <div className="min-h-0 flex-1 overflow-y-auto px-4 py-5">
-          <p className="mb-4 text-center text-sm text-neutral-800">
+        <div className="igather-scroll min-h-0 flex-1 overflow-y-auto px-4 py-5">
+          <p className="mb-4 text-center text-sm leading-relaxed text-neutral-600">
             Here are some suggestions based on your personal constraints
           </p>
 
@@ -111,7 +111,7 @@ export default function SuggestionsPage() {
                   className="w-full text-left"
                 >
                   <BorderedCard
-                    className={`transition ${isOn ? "ring-2 ring-[#568DED]" : ""}`}
+                    className={`transition ${isOn ? "ring-2 ring-[#568DED] ring-offset-2 ring-offset-white" : ""}`}
                   >
                     <h2 className="text-sm font-bold text-neutral-900">
                       {item.rank}. {item.name}
@@ -156,7 +156,9 @@ export default function SuggestionsPage() {
         </div>
 
         <footer className="shrink-0 px-4 pb-8 pt-2">
-          <PrimaryButton href={`/proposals?n=${selected.size}`}>
+          <PrimaryButton
+            href={`/proposals?n=${selected.size}&from=suggestions`}
+          >
             Add Selected ({selected.size})
           </PrimaryButton>
         </footer>

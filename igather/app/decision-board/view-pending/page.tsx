@@ -1,13 +1,13 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import { X } from "lucide-react";
 import { PhoneShell } from "@/components/igather/phone-shell";
 import {
   BorderedCard,
   PageHeaderCentered,
-  PrimaryButton,
+  primaryButtonClass,
   secondaryButtonClass,
 } from "@/components/igather/page-surface";
 import {
@@ -16,6 +16,7 @@ import {
 } from "@/lib/group-settings";
 
 const BLUE = "#568DED";
+const COMIC = "font-[family-name:var(--font-comic)]";
 
 function formatCountdown(totalSeconds: number) {
   const m = Math.floor(Math.max(0, totalSeconds) / 60);
@@ -23,74 +24,60 @@ function formatCountdown(totalSeconds: number) {
   return `${m}:${s.toString().padStart(2, "0")}`;
 }
 
-export default function SummaryPage() {
-  const router = useRouter();
-  const [reminderOpen, setReminderOpen] = useState(false);
+export default function ViewPendingPage() {
   const [secondsLeft, setSecondsLeft] = useState(
     DEFAULT_GROUP_SETTINGS.startTimerSeconds,
   );
+  const [reminderOpen, setReminderOpen] = useState(false);
 
   useEffect(() => {
     setSecondsLeft(readGroupSettings().startTimerSeconds);
   }, []);
 
   useEffect(() => {
-    if (secondsLeft <= 0) {
-      router.replace("/timeout");
-      return;
-    }
-    const t = window.setTimeout(() => {
-      setSecondsLeft((s) => s - 1);
-    }, 1000);
+    if (secondsLeft <= 0) return;
+    const t = window.setTimeout(() => setSecondsLeft((s) => s - 1), 1000);
     return () => window.clearTimeout(t);
-  }, [secondsLeft, router]);
+  }, [secondsLeft]);
 
   return (
     <PhoneShell>
-      <div className="relative flex min-h-0 flex-1 flex-col bg-white font-[family-name:var(--font-comic)]">
-        <PageHeaderCentered title="Alignment Summary" backHref="/limits" />
+      <div className={`relative flex min-h-0 flex-1 flex-col bg-white ${COMIC}`}>
+        <PageHeaderCentered title="Decision Board" backHref="/decision-board" />
 
         <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-4 py-5">
           <BorderedCard>
-            <h2 className="text-sm font-bold text-neutral-900">Purpose</h2>
+            <h2 className="text-sm font-bold text-neutral-900">Koh Lipe Thai</h2>
             <p className="mt-2 text-sm font-semibold" style={{ color: BLUE }}>
-              Restaurant
+              8:00pm
             </p>
           </BorderedCard>
 
           <BorderedCard>
-            <h2 className="text-sm font-bold text-neutral-900">Limits</h2>
-            <div
-              className="mt-2 space-y-1 text-sm font-semibold"
-              style={{ color: BLUE }}
-            >
-              <p>Budget: $30-50</p>
-              <p>Time: 6:00pm to 8:00pm</p>
-              <p>Travel: ≤ 30 min</p>
-            </div>
-          </BorderedCard>
-
-          <BorderedCard>
-            <h2 className="text-sm font-bold text-neutral-900">
-              Response Window
-            </h2>
-            <p className="mt-2 text-sm text-neutral-700">
+            <h2 className="text-sm font-bold text-neutral-900">Response Window</h2>
+            <p className="mt-2 text-sm font-semibold" style={{ color: BLUE }}>
               Auto timeout in {formatCountdown(secondsLeft)}
             </p>
             <p className="mt-3 text-sm text-neutral-700">Waiting for:</p>
             <div className="mt-3 flex justify-center">
               <div
-                className="flex size-16 items-center justify-center rounded-full bg-amber-100 text-3xl"
+                className="flex size-16 items-center justify-center overflow-hidden rounded-full bg-amber-100 text-3xl"
                 aria-hidden
               >
-                🦎
+                🕵️
               </div>
             </div>
           </BorderedCard>
         </div>
 
         <footer className="shrink-0 space-y-3 px-4 pb-8 pt-2">
-          <PrimaryButton href="/timeout">Force Timeout (Organizer Only)</PrimaryButton>
+          <Link
+            href="/group-settings"
+            className={primaryButtonClass}
+            style={{ backgroundColor: BLUE }}
+          >
+            Set Auto-time out (Organizer Only)
+          </Link>
           <button
             type="button"
             onClick={() => setReminderOpen(true)}
@@ -105,12 +92,16 @@ export default function SummaryPage() {
             className="absolute inset-0 z-20 flex flex-col bg-black/45 p-4 pt-5"
             role="dialog"
             aria-modal="true"
-            aria-labelledby="reminder-popup-title"
+            aria-labelledby="pending-reminder-title"
+            onClick={() => setReminderOpen(false)}
           >
-            <div className="pointer-events-auto shrink-0 rounded-2xl border border-neutral-200 bg-white p-4 shadow-lg">
+            <div
+              className="pointer-events-auto shrink-0 rounded-2xl border border-neutral-200 bg-white p-4 shadow-lg"
+              onClick={(e) => e.stopPropagation()}
+            >
               <div className="flex items-center justify-between gap-3">
                 <span
-                  id="reminder-popup-title"
+                  id="pending-reminder-title"
                   className="text-sm font-bold text-neutral-900"
                 >
                   iGather
