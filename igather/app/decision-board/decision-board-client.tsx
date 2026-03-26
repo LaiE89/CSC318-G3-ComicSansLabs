@@ -7,7 +7,9 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { PhoneShell } from "@/components/igather/phone-shell";
 import { PageHeaderCentered } from "@/components/igather/page-surface";
 import { readGroupSettings } from "@/lib/group-settings";
-import { writeLockedPlan } from "@/lib/locked-plan";
+import { writeLockedPlanForGroup } from "@/lib/locked-plan";
+import { DEFAULT_PROFILE, readProfile } from "@/lib/profile-storage";
+import { readActiveChatGroupId } from "@/lib/active-chat-group";
 import { DECISION_VENUES, type DecisionVenue } from "@/lib/decision-board";
 
 const PRIMARY = "#568DED";
@@ -95,6 +97,8 @@ export default function DecisionBoardClient() {
   const searchParams = useSearchParams();
   const view = (searchParams.get("view") as BoardView | null) ?? "initial";
 
+  const [profileName, setProfileName] = useState(() => DEFAULT_PROFILE.name);
+
   const koh = useMemo(
     () => DECISION_VENUES.find((v) => v.id === "koh")!,
     [],
@@ -108,13 +112,30 @@ export default function DecisionBoardClient() {
     [],
   );
 
+  useEffect(() => {
+    setProfileName(readProfile().name);
+  }, []);
+
+  const kohDisplay = useMemo(
+    () => ({ ...koh, organizer: profileName, proposer: profileName }),
+    [koh, profileName],
+  );
+  const foxDisplay = useMemo(
+    () => ({ ...fox, organizer: profileName, proposer: profileName }),
+    [fox, profileName],
+  );
+  const dearDisplay = useMemo(
+    () => ({ ...dear, organizer: profileName, proposer: profileName }),
+    [dear, profileName],
+  );
+
   const defaultDiscussing = useMemo<BoardRow[]>(
     () => [
-      { venue: koh, votes: 0, max: 5 },
-      { venue: fox, votes: 0, max: 5 },
-      { venue: dear, votes: 0, max: 5 },
+      { venue: kohDisplay, votes: 0, max: 5 },
+      { venue: foxDisplay, votes: 0, max: 5 },
+      { venue: dearDisplay, votes: 0, max: 5 },
     ],
-    [koh, fox, dear],
+    [kohDisplay, foxDisplay, dearDisplay],
   );
 
   const [discussing, setDiscussing] = useState<BoardRow[]>(defaultDiscussing);
@@ -141,18 +162,18 @@ export default function DecisionBoardClient() {
   const staticLayout = useMemo(() => {
     if (view === "locked") {
       return {
-        discussing: [{ venue: fox, votes: 0, max: 5 }],
-        ready: [{ venue: koh, votes: 5, max: 5 }],
+        discussing: [{ venue: foxDisplay, votes: 0, max: 5 }],
+        ready: [{ venue: kohDisplay, votes: 5, max: 5 }],
       };
     }
     if (view === "failed") {
       return {
-        discussing: [{ venue: fox, votes: 0, max: 5 }],
-        ready: [{ venue: koh, votes: 4, max: 5 }],
+        discussing: [{ venue: foxDisplay, votes: 0, max: 5 }],
+        ready: [{ venue: kohDisplay, votes: 4, max: 5 }],
       };
     }
     return null;
-  }, [view, koh, fox, dear]);
+  }, [view, kohDisplay, foxDisplay, dearDisplay]);
 
   const displayDiscussing =
     view === "initial" ? discussing : staticLayout!.discussing;
@@ -189,7 +210,7 @@ export default function DecisionBoardClient() {
           : r,
       ),
     );
-    writeLockedPlan({
+    writeLockedPlanForGroup(readActiveChatGroupId(0), {
       name: voteModalVenue.name,
       location: voteModalVenue.location,
       time: "8PM, March 17, 2026",

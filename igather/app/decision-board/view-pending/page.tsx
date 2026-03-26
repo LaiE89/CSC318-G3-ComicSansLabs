@@ -14,6 +14,10 @@ import {
   DEFAULT_GROUP_SETTINGS,
   readGroupSettings,
 } from "@/lib/group-settings";
+import {
+  ensureAlignmentTimer,
+  getAlignmentTimerRemainingSeconds,
+} from "@/lib/alignment-timer";
 
 const BLUE = "#568DED";
 const COMIC = "font-[family-name:var(--font-comic)]";
@@ -31,12 +35,15 @@ export default function ViewPendingPage() {
   const [reminderOpen, setReminderOpen] = useState(false);
 
   useEffect(() => {
-    setSecondsLeft(readGroupSettings().startTimerSeconds);
+    setSecondsLeft(getAlignmentTimerRemainingSeconds());
   }, []);
 
   useEffect(() => {
     if (secondsLeft <= 0) return;
-    const t = window.setTimeout(() => setSecondsLeft((s) => s - 1), 1000);
+    const t = window.setTimeout(
+      () => setSecondsLeft(getAlignmentTimerRemainingSeconds()),
+      1000,
+    );
     return () => window.clearTimeout(t);
   }, [secondsLeft]);
 

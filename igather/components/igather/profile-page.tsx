@@ -8,30 +8,17 @@ import {
   DEFAULT_AVAILABILITY,
   type Segment,
 } from "@/components/igather/availability-editor";
+import {
+  DEFAULT_PROFILE,
+  readProfile,
+  updateProfile,
+  type StoredProfile,
+} from "@/lib/profile-storage";
 
 const SAVE_CORAL = "#FF6B6B";
-const STORAGE_KEY = "igather-profile-v1";
-
-type StoredProfile = {
-  availability: Segment[][];
-  budget: string;
-  travel: string;
-};
-
-function loadProfile(): StoredProfile | null {
-  if (typeof window === "undefined") return null;
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return null;
-    const p = JSON.parse(raw) as StoredProfile;
-    if (!p || !Array.isArray(p.availability)) return null;
-    return p;
-  } catch {
-    return null;
-  }
-}
 
 export function ProfilePage() {
+  const [name, setName] = useState(DEFAULT_PROFILE.name);
   const [budget, setBudget] = useState("$100");
   const [travel, setTravel] = useState("30 min");
   const [availability, setAvailability] =
@@ -40,29 +27,29 @@ export function ProfilePage() {
   const [saveHint, setSaveHint] = useState<string | null>(null);
 
   useEffect(() => {
-    const p = loadProfile();
-    if (p) {
-      setBudget(p.budget);
-      setTravel(p.travel);
-      setAvailability(p.availability);
-    }
+    const p = readProfile();
+    setName(p.name);
+    setBudget(p.budget);
+    setTravel(p.travel);
+    setAvailability(p.availability);
     setHydrated(true);
   }, []);
 
   const handleSave = useCallback(() => {
     const payload: StoredProfile = {
+      name,
       availability,
       budget,
       travel,
     };
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+      updateProfile(payload);
       setSaveHint("Saved locally");
       window.setTimeout(() => setSaveHint(null), 2500);
     } catch {
       setSaveHint("Save failed");
     }
-  }, [availability, budget, travel]);
+  }, [availability, budget, travel, name]);
 
   return (
     <PhoneShell>
@@ -81,9 +68,20 @@ export function ProfilePage() {
             >
               🪽
             </div>
-            <p className="mt-4 text-2xl font-bold tracking-tight text-neutral-900">
-              Ethan
-            </p>
+            <div className="mt-4 w-full max-w-[13rem]">
+              <label className="sr-only" htmlFor="profile-name">
+                Name
+              </label>
+              <input
+                id="profile-name"
+                type="text"
+                inputMode="text"
+                autoComplete="off"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="w-full rounded-full border border-neutral-200 bg-white px-4 py-2 text-center text-sm font-semibold text-neutral-900 outline-none transition focus:ring-2 focus:ring-[#568DED]/35"
+              />
+            </div>
           </div>
 
           <section className="mt-8">
@@ -108,7 +106,7 @@ export function ProfilePage() {
             <div>
               <h2 className="mb-2 text-sm font-bold text-neutral-900">Budget</h2>
               <label className="sr-only" htmlFor="budget">
-                Budget
+                Default Budget
               </label>
               <input
                 id="budget"
@@ -123,7 +121,7 @@ export function ProfilePage() {
             <div>
               <h2 className="mb-2 text-sm font-bold text-neutral-900">Travel</h2>
               <label className="sr-only" htmlFor="travel">
-                Travel
+                Default Travel Time
               </label>
               <input
                 id="travel"

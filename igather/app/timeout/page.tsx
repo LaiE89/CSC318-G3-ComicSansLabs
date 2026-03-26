@@ -1,18 +1,65 @@
+"use client";
+
+import { useRouter } from "next/navigation";
 import { AlarmClock, Clock } from "lucide-react";
 import { PhoneShell } from "@/components/igather/phone-shell";
 import {
   PageHeaderCentered,
-  PrimaryButton,
-  SecondaryButton,
+  primaryButtonClass,
+  secondaryButtonClass,
 } from "@/components/igather/page-surface";
+import { clearLockedPlanForGroup } from "@/lib/locked-plan";
+import { readActiveChatGroupId } from "@/lib/active-chat-group";
 
 const BLUE = "#568DED";
 
+type PollLike = {
+  id: string;
+  type?: string;
+  phase?: "active" | "complete" | "cancelled";
+  cancelledReason?: string;
+};
+
+function cancelGroupPlan(groupId: number) {
+  clearLockedPlanForGroup(groupId);
+  try {
+    const key = `igather-chat-log-v1-${groupId}`;
+    const raw = localStorage.getItem(key);
+    if (!raw) return;
+    const parsed = JSON.parse(raw) as unknown;
+    if (!Array.isArray(parsed)) return;
+
+    const next = (parsed as PollLike[]).map((item) => {
+      if (!item || item.type !== "poll" || item.phase === "cancelled") return item;
+      return {
+        ...item,
+        phase: "cancelled" as const,
+        cancelledReason: "Plan cancelled.",
+      };
+    });
+    localStorage.setItem(key, JSON.stringify(next));
+  } catch {
+    /* ignore */
+  }
+}
+
 export default function TimeoutPage() {
+  const router = useRouter();
+
+  const onContinue = () => {
+    router.push("/limits");
+  };
+
+  const onCancel = () => {
+    const groupId = readActiveChatGroupId(0);
+    cancelGroupPlan(groupId);
+    router.push(`/chat/${groupId}`);
+  };
+
   return (
     <PhoneShell>
       <div className="flex min-h-0 flex-1 flex-col bg-white font-[family-name:var(--font-comic)]">
-        <PageHeaderCentered title="Alignment Summary" backHref="/summary" />
+        <PageHeaderCentered title="Alignment Summary" />
 
         <div className="flex min-h-0 flex-1 flex-col overflow-y-auto px-4 py-5">
           <div className="flex justify-center">
@@ -50,8 +97,21 @@ export default function TimeoutPage() {
         </div>
 
         <footer className="shrink-0 space-y-3 px-4 pb-8 pt-2">
-          <PrimaryButton href="/suggestions">Continue with Plan</PrimaryButton>
-          <SecondaryButton href="/chat">Cancel Plan</SecondaryButton>
+          <button
+            type="button"
+            onClick={onContinue}
+            className={primaryButtonClass}
+            style={{ backgroundColor: BLUE }}
+          >
+            Continue with Plan
+          </button>
+          <button
+            type="button"
+            onClick={onCancel}
+            className={secondaryButtonClass}
+          >
+            Cancel Plan
+          </button>
         </footer>
       </div>
     </PhoneShell>

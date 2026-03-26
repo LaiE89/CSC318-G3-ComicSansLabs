@@ -7,10 +7,11 @@ import { PhoneShell } from "@/components/igather/phone-shell";
 import { PageHeaderCentered, PrimaryButton } from "@/components/igather/page-surface";
 import { getVenueById } from "@/lib/decision-board";
 import {
-  readLockedPlan,
-  writeLockedPlan,
+  readLockedPlanForGroup,
+  writeLockedPlanForGroup,
   type LockedPlanPayload,
 } from "@/lib/locked-plan";
+import { readActiveChatGroupId } from "@/lib/active-chat-group";
 
 const COMIC = "font-[family-name:var(--font-comic)]";
 const BLUE = "#568DED";
@@ -30,7 +31,8 @@ export default function PlanLockedPage() {
 
   const [plan] = useState<LockedPlanPayload>(() => {
     if (typeof window === "undefined") return FALLBACK_PLAN;
-    return readLockedPlan() ?? FALLBACK_PLAN;
+    const groupId = readActiveChatGroupId(0);
+    return readLockedPlanForGroup(groupId) ?? FALLBACK_PLAN;
   });
 
   const heroSrc = useMemo(
@@ -41,8 +43,9 @@ export default function PlanLockedPage() {
   );
 
   const pinInChat = () => {
-    writeLockedPlan(plan);
-    router.push("/chat");
+    const groupId = readActiveChatGroupId(0);
+    writeLockedPlanForGroup(groupId, plan);
+    router.push(`/chat/${groupId}`);
   };
 
   return (

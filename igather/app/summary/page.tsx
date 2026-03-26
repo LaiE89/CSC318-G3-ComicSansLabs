@@ -5,6 +5,11 @@ import { useRouter } from "next/navigation";
 import { X } from "lucide-react";
 import { PhoneShell } from "@/components/igather/phone-shell";
 import {
+  DEFAULT_PROFILE,
+  readProfile,
+  type StoredProfile,
+} from "@/lib/profile-storage";
+import {
   BorderedCard,
   PageHeaderCentered,
   PrimaryButton,
@@ -14,6 +19,10 @@ import {
   DEFAULT_GROUP_SETTINGS,
   readGroupSettings,
 } from "@/lib/group-settings";
+import {
+  ensureAlignmentTimer,
+  getAlignmentTimerRemainingSeconds,
+} from "@/lib/alignment-timer";
 
 const BLUE = "#568DED";
 
@@ -26,12 +35,34 @@ function formatCountdown(totalSeconds: number) {
 export default function SummaryPage() {
   const router = useRouter();
   const [reminderOpen, setReminderOpen] = useState(false);
+  const [profile, setProfile] = useState<StoredProfile>(() => DEFAULT_PROFILE);
+  const [timeRange, setTimeRange] = useState<string>("6:00pm to 8:30pm");
   const [secondsLeft, setSecondsLeft] = useState(
     DEFAULT_GROUP_SETTINGS.startTimerSeconds,
   );
 
   useEffect(() => {
-    setSecondsLeft(readGroupSettings().startTimerSeconds);
+    setSecondsLeft(getAlignmentTimerRemainingSeconds());
+  }, []);
+
+  useEffect(() => {
+    // Keep summary in sync with the user's profile edits.
+    setProfile(readProfile());
+  }, []);
+
+  useEffect(() => {
+    // Keep time display in sync with the "limits" page state.
+    // "limits" persists it to sessionStorage under this key.
+    try {
+      const raw = sessionStorage.getItem("igather-limits");
+      if (!raw) return;
+      const p = JSON.parse(raw) as Partial<{
+        timeRange: string;
+      }>;
+      if (p.timeRange) setTimeRange(p.timeRange);
+    } catch {
+      /* ignore */
+    }
   }, []);
 
   useEffect(() => {
@@ -40,7 +71,7 @@ export default function SummaryPage() {
       return;
     }
     const t = window.setTimeout(() => {
-      setSecondsLeft((s) => s - 1);
+      setSecondsLeft(getAlignmentTimerRemainingSeconds());
     }, 1000);
     return () => window.clearTimeout(t);
   }, [secondsLeft, router]);
@@ -64,9 +95,10 @@ export default function SummaryPage() {
               className="mt-2 space-y-1 text-sm font-semibold"
               style={{ color: BLUE }}
             >
-              <p>Budget: $30-50</p>
-              <p>Time: 6:00pm to 8:00pm</p>
-              <p>Travel: ≤ 30 min</p>
+              <p>Name: {profile.name}</p>
+              <p>Budget: {profile.budget}</p>
+              <p>Time: {timeRange}</p>
+              <p>Travel: ≤ {profile.travel.replace(/[^0-9]/g, "") || "0"} min</p>
             </div>
           </BorderedCard>
 

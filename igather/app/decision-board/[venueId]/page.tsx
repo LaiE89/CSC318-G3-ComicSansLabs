@@ -3,8 +3,10 @@
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { Plus } from "lucide-react";
+import { useEffect, useState } from "react";
 import { PhoneShell } from "@/components/igather/phone-shell";
 import { getVenueById } from "@/lib/decision-board";
+import { DEFAULT_PROFILE, readProfile } from "@/lib/profile-storage";
 
 const COMIC = "font-[family-name:var(--font-comic)]";
 const PRIMARY = "#568DED";
@@ -30,6 +32,14 @@ export default function VenueDiscussionPage() {
   const params = useParams();
   const venueId = typeof params.venueId === "string" ? params.venueId : "";
   const venue = getVenueById(venueId);
+
+  const [organizerName, setOrganizerName] = useState(
+    () => DEFAULT_PROFILE.name,
+  );
+
+  useEffect(() => {
+    setOrganizerName(readProfile().name);
+  }, []);
 
   if (!venue) {
     return (
@@ -76,10 +86,12 @@ export default function VenueDiscussionPage() {
             <p>Location: {venue.location}</p>
             <p>Time: {venue.timeLabel}</p>
             <p className="text-neutral-800">
-              Proposer: <span style={{ color: PRIMARY }}>{venue.proposer}</span>
+              Proposer:{" "}
+              <span style={{ color: PRIMARY }}>{organizerName}</span>
             </p>
             <p className="text-neutral-800">
-              Organizer: <span style={{ color: PRIMARY }}>{venue.organizer}</span>
+              Organizer:{" "}
+              <span style={{ color: PRIMARY }}>{organizerName}</span>
             </p>
           </div>
         </div>

@@ -2,18 +2,7 @@
 
 import Link from "next/link";
 import { BottomNav } from "@/components/igather/bottom-nav";
-
-const GROUPS = [
-  "Comic Sans Lab",
-  "The Inner Circle",
-  "Chaos Committee",
-  "No Context Needed",
-  "Main Character Energy",
-  "Braincell Exchange",
-  "The Vibe Department",
-  "Delulu Headquarters",
-  "Unpaid Therapists",
-];
+import { CHAT_GROUPS } from "@/lib/chat-groups";
 
 function GroupAvatar({ name }: { name: string }) {
   const initial = name.charAt(0).toUpperCase();
@@ -40,10 +29,10 @@ export function ChatListPage() {
       </header>
 
       <div className="igather-scroll min-h-0 flex-1 space-y-2.5 overflow-y-auto px-4 pb-28 pt-4">
-        {GROUPS.map((name) => (
+        {CHAT_GROUPS.map((name, idx) => (
           <Link
             key={name}
-            href="/chat"
+            href={`/chat/${idx}`}
             className="flex w-full items-center gap-3 rounded-2xl border border-neutral-200/90 bg-white px-4 py-3.5 shadow-[0_1px_2px_rgba(0,0,0,0.04)] transition hover:border-neutral-300 hover:shadow-md active:scale-[0.99]"
           >
             <GroupAvatar name={name} />

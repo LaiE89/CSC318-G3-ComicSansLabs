@@ -1,5 +1,6 @@
 "use client";
 
+import { X } from "lucide-react";
 import { useCallback, useRef, useState } from "react";
 
 const BLUE = "#568DED";
@@ -10,19 +11,13 @@ const EDGE_FRAC = 0.12;
 export type Segment = { id: string; start: number; end: number };
 
 export const DEFAULT_AVAILABILITY: Segment[][] = [
-  [{ id: "d0a", start: 0.08, end: 0.46 }],
-  [
-    { id: "d1a", start: 0.12, end: 0.4 },
-    { id: "d1b", start: 0.62, end: 0.8 },
-  ],
-  [{ id: "d2a", start: 0.18, end: 0.7 }],
-  [
-    { id: "d3a", start: 0.06, end: 0.28 },
-    { id: "d3b", start: 0.48, end: 0.8 },
-  ],
-  [{ id: "d4a", start: 0.14, end: 0.58 }],
-  [{ id: "d5a", start: 0.22, end: 0.42 }],
-  [{ id: "d6a", start: 0.1, end: 0.68 }],
+  [],
+  [],
+  [],
+  [],
+  [],
+  [],
+  [],
 ];
 
 const TIME_LABELS = ["7am", "11am", "3pm", "7pm", "11pm"] as const;
@@ -40,6 +35,18 @@ function normalizeY(e: PointerEvent, track: HTMLElement) {
   const rect = track.getBoundingClientRect();
   const y = (e.clientY - rect.top) / rect.height;
   return clamp(y, 0, 1);
+}
+
+function segmentsHaveOverlap(segments: Segment[]): boolean {
+  for (let i = 0; i < segments.length; i++) {
+    for (let j = i + 1; j < segments.length; j++) {
+      const a = segments[i];
+      const b = segments[j];
+      // Touching edges is allowed (end === other.start).
+      if (a.start < b.end && a.end > b.start) return true;
+    }
+  }
+  return false;
 }
 
 export function AvailabilityEditor({
@@ -61,22 +68,33 @@ export function AvailabilityEditor({
   const trackRefs = useRef<(HTMLDivElement | null)[]>([]);
 
   const applyDay = useCallback((dayIndex: number, segments: Segment[]) => {
-    onChange(
-      valueRef.current.map((d, i) => (i === dayIndex ? segments : d)),
-    );
+    if (segmentsHaveOverlap(segments)) return;
+    onChange(valueRef.current.map((d, i) => (i === dayIndex ? segments : d)));
   }, [onChange]);
 
   const updateSegment = useCallback(
     (dayIndex: number, id: string, patch: Partial<Segment>) => {
-      onChange(
-        valueRef.current.map((day, i) =>
-          i !== dayIndex
-            ? day
-            : day.map((s) => (s.id === id ? { ...s, ...patch } : s)),
-        ),
-      );
+      const next = valueRef.current.map((day, i) => {
+        if (i !== dayIndex) return day;
+        return day.map((s) => (s.id === id ? { ...s, ...patch } : s));
+      });
+
+      const nextDay = next[dayIndex];
+      if (segmentsHaveOverlap(nextDay)) return;
+
+      onChange(next);
     },
     [onChange],
+  );
+
+  const removeSegment = useCallback(
+    (dayIndex: number, id: string) => {
+      applyDay(
+        dayIndex,
+        valueRef.current[dayIndex].filter((s) => s.id !== id),
+      );
+    },
+    [applyDay],
   );
 
   const onTrackPointerDown = (
@@ -204,20 +222,17 @@ export function AvailabilityEditor({
     track.addEventListener("pointercancel", onUp);
   };
 
-  const onSegmentDoubleClick = (e: React.MouseEvent, dayIndex: number, id: string) => {
+  const onSegmentDoubleClick = (
+    e: React.MouseEvent,
+    dayIndex: number,
+    id: string,
+  ) => {
     e.stopPropagation();
-    applyDay(
-      dayIndex,
-      valueRef.current[dayIndex].filter((s) => s.id !== id),
-    );
+    removeSegment(dayIndex, id);
   };
 
   return (
     <div className="w-full select-none">
-      <p className="mb-2 text-[11px] leading-snug text-neutral-500">
-        Drag on a gray track to add a block. Drag a blue block to move. Drag
-        the top or bottom edge to resize. Double-click a blue block to delete.
-      </p>
       <div className="flex gap-2">
         <div
           className="flex w-9 shrink-0 flex-col justify-between text-[10px] font-medium leading-none text-neutral-500"
@@ -255,7 +270,20 @@ export function AvailabilityEditor({
                     }}
                     onPointerDown={(e) => onSegmentPointerDown(e, dayIdx, seg)}
                     onDoubleClick={(e) => onSegmentDoubleClick(e, dayIdx, seg.id)}
-                  />
+                  >
+                    <button
+                      type="button"
+                      aria-label="Remove this availability block"
+                      className="absolute -right-1 -top-1 z-10 flex size-3 touch-manipulation items-center justify-center rounded-full bg-white text-neutral-600 shadow-sm ring-1 ring-black/10 transition hover:text-neutral-900 active:scale-95"
+                      onPointerDown={(e) => e.stopPropagation()}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        removeSegment(dayIdx, seg.id);
+                      }}
+                    >
+                      <X className="size-2" strokeWidth={2.5} aria-hidden />
+                    </button>
+                  </div>
                 ))}
                 {createPreview &&
                   createPreview.dayIndex === dayIdx &&

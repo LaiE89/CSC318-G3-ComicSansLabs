@@ -13,6 +13,9 @@ import {
   writeGroupSettings,
 } from "@/lib/group-settings";
 import { PAST_SUCCESSFUL_HANGOUTS } from "@/lib/past-successful-hangouts";
+import { readActiveChatGroupId } from "@/lib/active-chat-group";
+import { getChatGroupName } from "@/lib/chat-groups";
+import { readLockedPlanForGroup } from "@/lib/locked-plan";
 
 const BLUE = "#568DED";
 const COMIC = "font-[family-name:var(--font-comic)]";
@@ -22,9 +25,19 @@ const MAX_S = 180;
 export default function GroupSettingsPage() {
   const router = useRouter();
   const [duration, setDuration] = useState(60);
+  const [activeGroupId, setActiveGroupId] = useState(0);
+  const [lockedPlan, setLockedPlan] = useState(false);
+
+  const activeGroupName = useMemo(
+    () => getChatGroupName(activeGroupId),
+    [activeGroupId],
+  );
 
   useEffect(() => {
     setDuration(readGroupSettings().startTimerSeconds);
+    const id = readActiveChatGroupId(0);
+    setActiveGroupId(id);
+    setLockedPlan(!!readLockedPlanForGroup(id));
   }, []);
 
   const fillPct = useMemo(
@@ -33,8 +46,9 @@ export default function GroupSettingsPage() {
   );
 
   const handleSave = () => {
+    if (lockedPlan) return;
     writeGroupSettings({ startTimerSeconds: clampTimerSeconds(duration) });
-    router.push("/chat");
+    router.push(`/chat/${activeGroupId}`);
   };
 
   return (
@@ -43,7 +57,7 @@ export default function GroupSettingsPage() {
         <header className="shrink-0 rounded-b-[24px] bg-[#F2F2F2] px-4 pb-5 pt-10 shadow-[inset_0_-1px_0_rgba(0,0,0,0.05)]">
           <div className="flex items-center gap-2">
             <Link
-              href="/chat"
+              href={`/chat/${activeGroupId}`}
               className="flex size-10 shrink-0 items-center justify-center rounded-full text-neutral-900 transition hover:bg-black/[0.06] active:bg-black/[0.1]"
               aria-label="Back"
             >
@@ -57,7 +71,7 @@ export default function GroupSettingsPage() {
                 🦦
               </div>
               <span className="truncate text-sm font-semibold text-neutral-900">
-                Comic Sans Lab
+                {activeGroupName}
               </span>
             </div>
             <div className="size-10 shrink-0" aria-hidden />
@@ -88,7 +102,10 @@ export default function GroupSettingsPage() {
                   onChange={(e) =>
                     setDuration(clampTimerSeconds(Number(e.target.value)))
                   }
-                  className="gather-timer-range block w-full cursor-pointer"
+                  disabled={lockedPlan}
+                  className={`gather-timer-range block w-full cursor-pointer ${
+                    lockedPlan ? "pointer-events-none opacity-50 blur-[0.5px]" : ""
+                  }`}
                   style={
                     {
                       "--gather-fill": `${fillPct}%`,
@@ -151,6 +168,7 @@ export default function GroupSettingsPage() {
             onClick={handleSave}
             className={primaryButtonClass}
             style={{ backgroundColor: BLUE }}
+            disabled={lockedPlan}
           >
             Save Settings
           </button>

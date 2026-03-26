@@ -7,14 +7,23 @@ import {
   BorderedCard,
   PageHeaderWithBack,
 } from "@/components/igather/page-surface";
+import { readProfile, updateProfile } from "@/lib/profile-storage";
+import type { Segment } from "@/components/igather/availability-editor";
 
 const PRIMARY = "#568DED";
 const STORAGE_KEY = "igather-limits";
+const DEFAULT_TIME_WINDOW_MINUTES = 150; // 2.5 hours
+
+// AvailabilityEditor chart mapping: 0..1 maps to 7am..11pm (16 hours).
+const AVAIL_START_MINUTES = 7 * 60;
+const AVAIL_END_MINUTES = 23 * 60;
+const AVAIL_SPAN_MINUTES = AVAIL_END_MINUTES - AVAIL_START_MINUTES;
 
 type LimitsState = {
   budget: string;
   timeRange: string;
   travel: string;
+  availabilityFingerprint?: string;
 };
 
 type EditingField = "budget" | "time" | "travel" | null;
@@ -28,20 +37,107 @@ function parseTravelMinutes(travel: string): number {
 export default function LimitsPage() {
   const router = useRouter();
   const [budget, setBudget] = useState("$30-$50");
-  const [timeRange, setTimeRange] = useState("6:00 to 8:30");
+  const [timeRange, setTimeRange] = useState("6:00pm to 8:30pm");
   const [travel, setTravel] = useState("30 minutes");
   const [editing, setEditing] = useState<EditingField>(null);
   const [travelMinutes, setTravelMinutes] = useState(30);
+  const [availabilityFingerprint, setAvailabilityFingerprint] =
+    useState<string>("");
   const budgetInputRef = useRef<HTMLInputElement | null>(null);
   const timeInputRef = useRef<HTMLInputElement | null>(null);
 
+  const formatTime = (minutesFromMidnight: number) => {
+    const m = Math.floor(minutesFromMidnight);
+    const h24 = ((Math.floor(m / 60) % 24) + 24) % 24;
+    const mins = ((m % 60) + 60) % 60;
+    const ampm = h24 < 12 ? "am" : "pm";
+    const h12Raw = h24 % 12;
+    const h12 = h12Raw === 0 ? 12 : h12Raw;
+    return `${h12}:${String(mins).padStart(2, "0")}${ampm}`;
+  };
+
+  const defaultTimeRangeFromAvailability = (availability: Segment[][]) => {
+    let best: { startMin: number; endMin: number } | null = null;
+
+    for (const day of availability) {
+      for (const seg of day) {
+        const startMin = AVAIL_START_MINUTES + seg.start * AVAIL_SPAN_MINUTES;
+        const endMin = AVAIL_START_MINUTES + seg.end * AVAIL_SPAN_MINUTES;
+        if (!Number.isFinite(startMin) || !Number.isFinite(endMin)) continue;
+        if (endMin <= startMin) continue;
+
+        if (!best || startMin < best.startMin) {
+          best = { startMin, endMin };
+        }
+      }
+    }
+
+    if (!best) return "6:00pm to 8:30pm";
+    // Default should mirror an actual availability slot.
+    return `${formatTime(best.startMin)} to ${formatTime(best.endMin)}`;
+  };
+
   useEffect(() => {
     try {
+      const profile = readProfile();
+      if (profile.budget) setBudget(profile.budget);
+      if (profile.travel) {
+        setTravel(profile.travel);
+        setTravelMinutes(parseTravelMinutes(profile.travel));
+      }
+
+      const fingerprintAvailability = (
+        availability: Segment[][],
+      ): string => {
+        // Ignore Segment `id` so the fingerprint only depends on start/end.
+        const normalized = availability.map((day) =>
+          day
+            .map((s) => ({
+              start: Math.round(s.start * 10000) / 10000,
+              end: Math.round(s.end * 10000) / 10000,
+            }))
+            .sort((a, b) => a.start - b.start),
+        );
+
+        // Simple stable hash to keep storage small.
+        const str = JSON.stringify(normalized);
+        let h = 2166136261;
+        for (let i = 0; i < str.length; i++) {
+          h ^= str.charCodeAt(i);
+          h = Math.imul(h, 16777619);
+        }
+        return (h >>> 0).toString(16);
+      };
+
+      const computedFingerprint = fingerprintAvailability(
+        profile.availability,
+      );
+      setAvailabilityFingerprint(computedFingerprint);
+
+      const computedDefaultTime = defaultTimeRangeFromAvailability(
+        profile.availability,
+      );
+
       const raw = sessionStorage.getItem(STORAGE_KEY);
-      if (!raw) return;
+      if (!raw) {
+        setTimeRange(computedDefaultTime);
+        return;
+      }
       const p = JSON.parse(raw) as Partial<LimitsState>;
+
+      const shouldUseStoredTime =
+        typeof p.availabilityFingerprint === "string" &&
+        p.availabilityFingerprint === computedFingerprint;
+
+      if (!shouldUseStoredTime) {
+        setTimeRange(computedDefaultTime);
+      } else if (p.timeRange) {
+        setTimeRange(p.timeRange);
+      } else {
+        setTimeRange(computedDefaultTime);
+      }
+
       if (p.budget) setBudget(p.budget);
-      if (p.timeRange) setTimeRange(p.timeRange);
       if (p.travel) {
         setTravel(p.travel);
         setTravelMinutes(parseTravelMinutes(p.travel));
@@ -68,14 +164,25 @@ export default function LimitsPage() {
         timeRange,
         travel,
         ...overrides,
+        availabilityFingerprint,
       };
       try {
         sessionStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
       } catch {
         /* ignore */
       }
+
+      // Keep budget/travel in the shared profile so other screens pre-fill.
+      try {
+        updateProfile({
+          budget: payload.budget,
+          travel: payload.travel,
+        });
+      } catch {
+        /* ignore */
+      }
     },
-    [budget, timeRange, travel],
+    [budget, timeRange, travel, availabilityFingerprint],
   );
 
   const commitTravelFromSlider = useCallback(() => {
@@ -113,18 +220,7 @@ export default function LimitsPage() {
   const handleNext = () => {
     const travelFinal =
       editing === "travel" ? `${travelMinutes} minutes` : travel;
-    try {
-      sessionStorage.setItem(
-        STORAGE_KEY,
-        JSON.stringify({
-          budget,
-          timeRange,
-          travel: travelFinal,
-        }),
-      );
-    } catch {
-      /* ignore */
-    }
+    persistState({ travel: travelFinal });
     router.push("/summary");
   };
 
@@ -248,17 +344,6 @@ export default function LimitsPage() {
                     <span>5 min</span>
                     <span>120 min</span>
                   </div>
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      commitTravelFromSlider();
-                      setEditing(null);
-                    }}
-                    className="w-full rounded-full border border-neutral-300 py-2 text-sm font-semibold text-neutral-800 hover:bg-neutral-50"
-                  >
-                    Done
-                  </button>
                 </div>
               ) : (
                 <p
