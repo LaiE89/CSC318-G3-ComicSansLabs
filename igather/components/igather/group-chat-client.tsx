@@ -16,7 +16,9 @@ import {
   getAlignmentTimerDeadlineMs,
   getAlignmentTimerRemainingSeconds,
   setAlignmentTimerFromNow,
+  setSummaryTimerFromNow,
 } from "@/lib/alignment-timer";
+import { writeTimeoutContinueContext } from "@/lib/timeout-continue-context";
 import {
   ArrowLeft,
   ChevronDown,
@@ -556,7 +558,15 @@ function GroupChatInner({
     setOverlay(null);
     setPlanSource("new");
     setActivePollId(null);
-    setAlignmentTimerFromNow(readGroupSettings().startTimerSeconds);
+    writeTimeoutContinueContext({
+      planSource: "new",
+      pastLocationId: null,
+    });
+    {
+      const seconds = readGroupSettings().startTimerSeconds;
+      setAlignmentTimerFromNow(seconds);
+      setSummaryTimerFromNow(seconds);
+    }
     setPlanningPhase("voting");
   };
 
@@ -564,7 +574,15 @@ function GroupChatInner({
     setOverlay(null);
     setPlanSource("past");
     setActivePollId(null);
-    setAlignmentTimerFromNow(readGroupSettings().startTimerSeconds);
+    writeTimeoutContinueContext({
+      planSource: "past",
+      pastLocationId,
+    });
+    {
+      const seconds = readGroupSettings().startTimerSeconds;
+      setAlignmentTimerFromNow(seconds);
+      setSummaryTimerFromNow(seconds);
+    }
     setPlanningPhase("voting");
   };
 

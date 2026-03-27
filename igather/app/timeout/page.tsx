@@ -8,46 +8,28 @@ import {
   primaryButtonClass,
   secondaryButtonClass,
 } from "@/components/igather/page-surface";
-import { clearLockedPlanForGroup } from "@/lib/locked-plan";
 import { readActiveChatGroupId } from "@/lib/active-chat-group";
+import { cancelGroupPlan } from "@/lib/cancel-group-plan";
+import {
+  clearTimeoutContinueContext,
+  readTimeoutContinueContext,
+} from "@/lib/timeout-continue-context";
 
 const BLUE = "#568DED";
-
-type PollLike = {
-  id: string;
-  type?: string;
-  phase?: "active" | "complete" | "cancelled";
-  cancelledReason?: string;
-};
-
-function cancelGroupPlan(groupId: number) {
-  clearLockedPlanForGroup(groupId);
-  try {
-    const key = `igather-chat-log-v1-${groupId}`;
-    const raw = localStorage.getItem(key);
-    if (!raw) return;
-    const parsed = JSON.parse(raw) as unknown;
-    if (!Array.isArray(parsed)) return;
-
-    const next = (parsed as PollLike[]).map((item) => {
-      if (!item || item.type !== "poll" || item.phase === "cancelled") return item;
-      return {
-        ...item,
-        phase: "cancelled" as const,
-        cancelledReason: "Plan cancelled.",
-      };
-    });
-    localStorage.setItem(key, JSON.stringify(next));
-  } catch {
-    /* ignore */
-  }
-}
 
 export default function TimeoutPage() {
   const router = useRouter();
 
   const onContinue = () => {
-    router.push("/limits");
+    const ctx = readTimeoutContinueContext();
+    clearTimeoutContinueContext();
+    if (ctx?.planSource === "past" && ctx.pastLocationId) {
+      router.push(
+        `/decision-board?seedPast=${encodeURIComponent(ctx.pastLocationId)}`,
+      );
+      return;
+    }
+    router.push("/suggestions");
   };
 
   const onCancel = () => {

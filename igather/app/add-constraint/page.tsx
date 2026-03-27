@@ -7,7 +7,10 @@ import {
   PageHeaderCentered,
   primaryButtonClass,
 } from "@/components/igather/page-surface";
-import { PRIVATE_CONSTRAINTS_SESSION_KEY } from "@/lib/private-constraints";
+import {
+  PRIVATE_CONSTRAINTS_SESSION_KEY,
+  clearIgnoredProposalIds,
+} from "@/lib/private-constraints";
 
 const BLUE = "#568DED";
 const COMIC = "font-[family-name:var(--font-comic)]";
@@ -18,19 +21,16 @@ const inputClass =
 export default function AddConstraintPage() {
   const router = useRouter();
   const [budget, setBudget] = useState("");
-  const [timeFrom, setTimeFrom] = useState("");
-  const [timeTo, setTimeTo] = useState("");
   const [travel, setTravel] = useState("");
   const [other, setOther] = useState("");
 
   const handleSubmit = () => {
     try {
+      clearIgnoredProposalIds();
       sessionStorage.setItem(
         PRIVATE_CONSTRAINTS_SESSION_KEY,
         JSON.stringify({
           budget,
-          timeFrom,
-          timeTo,
           travel,
           other,
           submittedAt: Date.now(),
@@ -64,29 +64,6 @@ export default function AddConstraintPage() {
                 placeholder="$_______"
                 autoComplete="off"
               />
-            </label>
-
-            <label className="block">
-              <span className="text-sm font-bold text-neutral-900">Time</span>
-              <div className="mt-2 flex items-center gap-2">
-                <input
-                  type="text"
-                  value={timeFrom}
-                  onChange={(e) => setTimeFrom(e.target.value)}
-                  className={`${inputClass} mt-0 flex-1`}
-                  placeholder="__:__"
-                  autoComplete="off"
-                />
-                <span className="text-sm font-semibold text-neutral-600">to</span>
-                <input
-                  type="text"
-                  value={timeTo}
-                  onChange={(e) => setTimeTo(e.target.value)}
-                  className={`${inputClass} mt-0 flex-1`}
-                  placeholder="__:__"
-                  autoComplete="off"
-                />
-              </div>
             </label>
 
             <label className="block">

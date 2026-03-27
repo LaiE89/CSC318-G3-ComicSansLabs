@@ -12,6 +12,7 @@ import {
   type LockedPlanPayload,
 } from "@/lib/locked-plan";
 import { readActiveChatGroupId } from "@/lib/active-chat-group";
+import { markGroupPlanVoteComplete } from "@/lib/chat-plan-vote";
 
 const COMIC = "font-[family-name:var(--font-comic)]";
 const BLUE = "#568DED";
@@ -45,13 +46,14 @@ export default function PlanLockedPage() {
   const pinInChat = () => {
     const groupId = readActiveChatGroupId(0);
     writeLockedPlanForGroup(groupId, plan);
+    markGroupPlanVoteComplete(groupId);
     router.push(`/chat/${groupId}`);
   };
 
   return (
     <PhoneShell>
       <div className={`flex min-h-0 flex-1 flex-col bg-white ${COMIC}`}>
-        <PageHeaderCentered title="Plan Locked" backHref="/decision-board?view=locked" />
+        <PageHeaderCentered title="Plan Locked" />
 
         <div className="igather-scroll min-h-0 flex-1 space-y-5 overflow-y-auto px-4 py-5">
           <h2 className="text-center text-lg font-bold text-neutral-900">
@@ -75,7 +77,7 @@ export default function PlanLockedPage() {
         </div>
 
         <footer className="shrink-0 space-y-3 px-4 pb-8 pt-2">
-          <PrimaryButton href="/decision-board?view=locked">
+          <PrimaryButton href="/decision-board">
             View Decision Board
           </PrimaryButton>
           <button

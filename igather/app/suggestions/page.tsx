@@ -93,7 +93,7 @@ export default function SuggestionsPage() {
   return (
     <PhoneShell>
       <div className={`flex min-h-0 flex-1 flex-col bg-[#FAFAFA] ${COMIC}`}>
-        <PageHeaderCentered title="Suggestions" backHref="/timeout" />
+        <PageHeaderCentered title="Suggestions" />
 
         <div className="igather-scroll min-h-0 flex-1 overflow-y-auto px-4 py-5">
           <p className="mb-4 text-center text-sm leading-relaxed text-neutral-600">

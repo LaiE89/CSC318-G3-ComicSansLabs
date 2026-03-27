@@ -20,8 +20,9 @@ import {
   readGroupSettings,
 } from "@/lib/group-settings";
 import {
-  ensureAlignmentTimer,
-  getAlignmentTimerRemainingSeconds,
+  ensureSummaryTimer,
+  setSummaryTimerFromNow,
+  getSummaryTimerRemainingSeconds,
 } from "@/lib/alignment-timer";
 
 const BLUE = "#568DED";
@@ -42,7 +43,10 @@ export default function SummaryPage() {
   );
 
   useEffect(() => {
-    setSecondsLeft(getAlignmentTimerRemainingSeconds());
+    // Summary response-window timer should start fresh when you reach Summary,
+    // not inherit time elapsed during the plan vote.
+    setSummaryTimerFromNow(readGroupSettings().startTimerSeconds);
+    setSecondsLeft(getSummaryTimerRemainingSeconds());
   }, []);
 
   useEffect(() => {
@@ -71,7 +75,7 @@ export default function SummaryPage() {
       return;
     }
     const t = window.setTimeout(() => {
-      setSecondsLeft(getAlignmentTimerRemainingSeconds());
+      setSecondsLeft(getSummaryTimerRemainingSeconds());
     }, 1000);
     return () => window.clearTimeout(t);
   }, [secondsLeft, router]);
