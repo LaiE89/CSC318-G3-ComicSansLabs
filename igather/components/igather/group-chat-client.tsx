@@ -18,7 +18,15 @@ import {
   setAlignmentTimerFromNow,
   setSummaryTimerFromNow,
 } from "@/lib/alignment-timer";
-import { writeTimeoutContinueContext } from "@/lib/timeout-continue-context";
+import { clearActiveProposalIdsForBoard } from "@/lib/decision-board-active-proposals";
+import {
+  writePastHangoutLocationId,
+  clearPastHangoutLocationId,
+} from "@/lib/decision-board-past-seed";
+import {
+  readTimeoutContinueContext,
+  writeTimeoutContinueContext,
+} from "@/lib/timeout-continue-context";
 import {
   ArrowLeft,
   ChevronDown,
@@ -158,6 +166,7 @@ type PollMsg = {
   phase: PollPhase;
   myChoice?: "yes" | "no";
   cancelledReason?: string;
+  seedPastLocationId?: string | null;
 };
 
 type ChatItem = Msg | PollMsg;
@@ -291,6 +300,17 @@ function GroupChatInner({
     newPlanMonth.monthIndex,
     newPlanMonth.year,
   ]);
+
+  const startPlanHref = useMemo(() => {
+    if (planSource === "past" && pastLocationId) {
+      return `/decision-board?seedPast=${encodeURIComponent(pastLocationId)}`;
+    }
+    const ctx = readTimeoutContinueContext();
+    if (ctx?.planSource === "past" && ctx.pastLocationId) {
+      return `/decision-board?seedPast=${encodeURIComponent(ctx.pastLocationId)}`;
+    }
+    return "/limits";
+  }, [pastLocationId, planSource]);
 
   const closeOverlay = useCallback(() => setOverlay(null), []);
 
@@ -452,6 +472,9 @@ function GroupChatInner({
     // Insert poll once per voting run.
     if (activePollId) return;
     const pollId = newId();
+    const seedPastLocationId =
+      planSource === "past" ? pastLocationId : null;
+    if (seedPastLocationId) writePastHangoutLocationId(seedPastLocationId);
     setActivePollId(pollId);
     setChatLog((prev) => [
       ...prev,
@@ -460,9 +483,10 @@ function GroupChatInner({
         type: "poll",
         question: planCardTitle,
         phase: "active",
+        seedPastLocationId,
       },
     ]);
-  }, [activePollId, planningPhase, planCardTitle]);
+  }, [activePollId, planningPhase, planCardTitle, planSource, pastLocationId]);
 
   useEffect(() => {
     maybeInsertPoll();
@@ -558,6 +582,7 @@ function GroupChatInner({
     setOverlay(null);
     setPlanSource("new");
     setActivePollId(null);
+    clearPastHangoutLocationId();
     writeTimeoutContinueContext({
       planSource: "new",
       pastLocationId: null,
@@ -574,6 +599,8 @@ function GroupChatInner({
     setOverlay(null);
     setPlanSource("past");
     setActivePollId(null);
+    clearActiveProposalIdsForBoard();
+    if (pastLocationId) writePastHangoutLocationId(pastLocationId);
     writeTimeoutContinueContext({
       planSource: "past",
       pastLocationId,
@@ -729,7 +756,13 @@ function GroupChatInner({
                           />
                         </div>
                         <Link
-                          href="/limits"
+                          href={
+                            item.myChoice === "no"
+                              ? "/limits"
+                              : item.seedPastLocationId
+                                ? `/decision-board?seedPast=${encodeURIComponent(item.seedPastLocationId)}`
+                                : startPlanHref
+                          }
                           className="flex w-full items-center justify-center rounded-full bg-white py-3 text-sm font-semibold text-black transition hover:bg-neutral-100 active:scale-[0.99] font-[family-name:var(--font-comic)]"
                         >
                           {item.myChoice === "no"
@@ -848,7 +881,10 @@ function GroupChatInner({
               {overlay === "pastLocations" && (
                 <PastLocationsContent
                   selectedId={pastLocationId}
-                  onSelect={setPastLocationId}
+                  onSelect={(id) => {
+                    setPastLocationId(id);
+                    writePastHangoutLocationId(id);
+                  }}
                   onClose={closeOverlay}
                   onNext={() => setOverlay("pastDate")}
                 />

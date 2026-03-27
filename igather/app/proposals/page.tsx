@@ -19,6 +19,7 @@ import {
 } from "@/lib/decision-board-active-proposals";
 import { clearBoardSnapshot } from "@/lib/decision-board-snapshot";
 import { clearDecisionBoardStatusMap } from "@/lib/decision-board-status";
+import { clearPastHangoutLocationId } from "@/lib/decision-board-past-seed";
 import {
   ALL_PROPOSALS_BOARD,
   type ProposalBoardItem,
@@ -160,6 +161,7 @@ export default function ProposalsPage() {
     const activeIds = ALL_PROPOSALS_BOARD.filter(
       (p) => !rejectedMeta.get(p.id)?.rejected,
     ).map((p) => p.id);
+    clearPastHangoutLocationId();
     clearBoardSnapshot();
     clearDecisionBoardStatusMap();
     writeActiveProposalIdsForBoard(activeIds);

@@ -37,6 +37,11 @@ import {
   type DecisionCardStatus,
   writeDecisionBoardStatusMap,
 } from "@/lib/decision-board-status";
+import {
+  clearPastHangoutLocationId,
+  readPastHangoutLocationId,
+  writePastHangoutLocationId,
+} from "@/lib/decision-board-past-seed";
 
 const PRIMARY = "#568DED";
 const COMIC = "font-[family-name:var(--font-comic)]";
@@ -306,23 +311,55 @@ export default function DecisionBoardClient() {
   useLayoutEffect(() => {
     if (view !== "initial") return;
 
-    const seedPast = searchParams.get("seedPast");
+    const activeProposalIds = readActiveProposalIdsForBoard();
+    if (activeProposalIds?.length) {
+      clearPastHangoutLocationId();
+      appliedPastSeedIdRef.current = null;
+    }
 
-    if (seedPast && appliedPastSeedIdRef.current !== seedPast) {
-      appliedPastSeedIdRef.current = seedPast;
-      lastProposalFilterSerializedRef.current = null;
-      clearActiveProposalIdsForBoard();
-      clearBoardSnapshot();
-      clearDecisionBoardStatusMap();
-      const venue = getDecisionVenueFromPlanSeed(seedPast, readProfile().name);
-      // Past successful hangout flow: only the selected spot on the board.
-      setDiscussing(() => [{ venue, votes: 0, max: 5, status: "discussing" }]);
-      setReady([]);
-      router.replace("/decision-board", { scroll: false });
+    const seedFromQuery = searchParams.get("seedPast");
+    if (seedFromQuery?.trim()) {
+      writePastHangoutLocationId(seedFromQuery.trim());
+    }
+    const seedPast =
+      seedFromQuery?.trim() || readPastHangoutLocationId() || null;
+
+    // Past hangout flow: one card for the selected location (from URL and/or localStorage).
+    if (seedPast && !activeProposalIds?.length) {
+      if (appliedPastSeedIdRef.current !== seedPast) {
+        appliedPastSeedIdRef.current = seedPast;
+        lastProposalFilterSerializedRef.current = null;
+        clearActiveProposalIdsForBoard();
+        const venue = getDecisionVenueFromPlanSeed(
+          seedPast,
+          readProfile().name,
+        );
+        const template: BoardRow[] = [
+          { venue, votes: 0, max: 5, status: "discussing" },
+        ];
+        let statuses = readDecisionBoardStatusMap();
+        if (
+          Object.keys(statuses).length > 0 &&
+          statuses[venue.id] == null
+        ) {
+          clearDecisionBoardStatusMap();
+          statuses = {};
+        }
+        if (Object.keys(statuses).length > 0 && statuses[venue.id]) {
+          const split = splitRowsByStatus(template, statuses);
+          setDiscussing(split.discussingRows);
+          setReady(split.readyRows);
+        } else {
+          clearBoardSnapshot();
+          clearDecisionBoardStatusMap();
+          setDiscussing(template);
+          setReady([]);
+        }
+      }
       return;
     }
 
-    const activeProposalIds = readActiveProposalIdsForBoard();
+    appliedPastSeedIdRef.current = null;
     const serialized = proposalIdsSignature(activeProposalIds);
 
     const templatesForMerge: BoardRow[] =
@@ -408,16 +445,6 @@ export default function DecisionBoardClient() {
 
     if (!activeProposalIds?.length) {
       lastProposalFilterSerializedRef.current = null;
-    }
-
-    if (appliedPastSeedIdRef.current) {
-      setDiscussing((prev) =>
-        mergeBoardRowsWithTemplates(prev, defaultDiscussing, profileName),
-      );
-      setReady((prev) =>
-        mergeBoardRowsWithTemplates(prev, defaultDiscussing, profileName),
-      );
-      return;
     }
 
     setDiscussing(defaultDiscussing);
