@@ -39,7 +39,7 @@ export const PAST_SUCCESSFUL_HANGOUTS: readonly PastSuccessfulHangout[] = [
   },
   {
     id: "bar",
-    name: "Bar+Karaoke",
+    name: "Bar+ Karaoke",
     date: "Aug 3, 2025",
     tag: "Karaoke Night",
     people: 6,
