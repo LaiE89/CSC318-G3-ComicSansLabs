@@ -49,10 +49,10 @@ const COMIC = "font-[family-name:var(--font-comic)]";
 /** Demo names for “still need a yes” (same order as simulated Yes taps). */
 const PENDING_VOTE_MEMBER_NAMES = [
   "David",
-  "Maya",
-  "Sam",
-  "Jordan",
-  "Alex",
+  "Cristiano",
+  "Ethan",
+  "Romy",
+  "Hiro",
 ] as const;
 
 function waitingMemberNames(yesCount: number, max: number): string[] {
